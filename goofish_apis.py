@@ -9,7 +9,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Union
 from urllib.parse import quote
 
 import requests
@@ -286,6 +286,7 @@ class XianyuApis:
         self.upload_media_url = 'https://stream-upload.goofish.com/api/upload.api'
         self.refresh_token_url = 'https://h5api.m.goofish.com/h5/mtop.taobao.idlemessage.pc.loginuser.get/1.0/'
         self.item_detail_url = 'https://h5api.m.goofish.com/h5/mtop.taobao.idle.pc.detail/1.0/'
+        self.search_url = 'https://h5api.m.goofish.com/h5/mtop.taobao.idlemtopsearch.pc.search/1.0/'
         self.reset_login_info_url = 'https://passport.goofish.com/newlogin/hasLogin.do'
         self.session = requests.Session()
         self.session.cookies.update(cookies)
@@ -454,6 +455,83 @@ class XianyuApis:
         response = self.session.post(self.item_detail_url, params=params, data=data)
         res_json = response.json()
         return res_json
+
+    def search_items(self, keyword: str, page_number: int = 1, rows_per_page: int = 30,
+                     sort_value: str = '', sort_field: str = '',
+                     custom_distance: str = '', gps: str = '',
+                     prop_value_str: Optional[dict] = None,
+                     extra_filter_value: Optional[Union[dict, str]] = None,
+                     user_position_json: Optional[Union[dict, str]] = None,
+                     custom_gps: str = '', from_filter: bool = False):
+        """搜索闲鱼商品。
+
+        参数结构来自 PC 搜索页 /search 的 mtop 请求：
+        mtop.taobao.idlemtopsearch.pc.search
+        """
+        headers = {
+            "accept": "application/json",
+            "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+            "cache-control": "no-cache",
+            "content-type": "application/x-www-form-urlencoded",
+            "origin": "https://www.goofish.com",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "https://www.goofish.com/",
+            "sec-ch-ua": "\"Chromium\";v=\"148\", \"Microsoft Edge\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0")
+        }
+        params = {
+            "jsv": "2.7.2",
+            "appKey": "34839810",
+            "t": str(int(time.time()) * 1000),
+            "sign": "",
+            "v": "1.0",
+            "type": "originaljson",
+            "accountSite": "xianyu",
+            "dataType": "json",
+            "timeout": "20000",
+            "api": "mtop.taobao.idlemtopsearch.pc.search",
+            "sessionOption": "AutoLoginOnly",
+            "spm_cnt": "a21ybx.search.0.0",
+            "spm_pre": "a21ybx.search.searchInput.0",
+        }
+
+        def json_string(value):
+            if value is None:
+                return "{}"
+            if isinstance(value, str):
+                return value
+            return json.dumps(value, separators=(',', ':'), ensure_ascii=False)
+
+        data_body = {
+            "pageNumber": page_number,
+            "keyword": keyword,
+            "fromFilter": from_filter,
+            "rowsPerPage": rows_per_page,
+            "sortValue": sort_value,
+            "sortField": sort_field,
+            "customDistance": custom_distance,
+            "gps": gps,
+            "propValueStr": prop_value_str or {},
+            "customGps": custom_gps,
+            "searchReqFromPage": "pcSearch",
+            "extraFilterValue": json_string(extra_filter_value),
+            "userPositionJson": json_string(user_position_json),
+        }
+        data_val = json.dumps(data_body, separators=(',', ':'), ensure_ascii=False)
+        data = {
+            "data": data_val
+        }
+        token = self.session.cookies.get('_m_h5_tk', '').split('_')[0]
+        params["sign"] = generate_sign(params["t"], token, data_val)
+        response = self.session.post(self.search_url, headers=headers, params=params, data=data)
+        return response.json()
 
 
     def get_public_channel(self, title, images_info):
@@ -767,10 +845,15 @@ if __name__ == '__main__':
     # res = xianyu.get_item_info('1001160709960')
     # print(json.dumps(res, indent=4, ensure_ascii=False))
 
+    price: Optional[Price] = {
+        "current_price": 99.0,
+        "original_price": 129.0
+    }
+
     res = xianyu.public(
-        images_path=[r"D:\Desktop\logo.jpg"],
+        images_path=[r"C:\Users\Clim\Pictures\ScreenShot_2026-02-27_173537_626.png"],
         goods_desc="测试发布111222",
-        price=None,
+        price=price,
         ds={"choice": "一口价", "post_price": 0.01, "can_self_pickup": True}
     )
     print(json.dumps(res, indent=4, ensure_ascii=False))

@@ -3,7 +3,10 @@ import json
 import subprocess
 from functools import partial
 
-import blackboxprotobuf
+try:
+    import blackboxprotobuf
+except ModuleNotFoundError:
+    blackboxprotobuf = None
 
 subprocess.Popen = partial(subprocess.Popen, encoding="utf-8")
 import execjs
