@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import subprocess
 from functools import partial
@@ -9,12 +10,23 @@ except ModuleNotFoundError:
     blackboxprotobuf = None
 
 subprocess.Popen = partial(subprocess.Popen, encoding="utf-8")
-import execjs
-
 try:
-    xianyu_js = execjs.compile(open(r'../static/goofish_js_version_2.js', 'r', encoding='utf-8').read())
-except:
-    xianyu_js = execjs.compile(open(r'static/goofish_js_version_2.js', 'r', encoding='utf-8').read())
+    import execjs
+except ModuleNotFoundError:
+    execjs = None
+
+if execjs:
+    try:
+        xianyu_js = execjs.compile(open(r'../static/goofish_js_version_2.js', 'r', encoding='utf-8').read())
+    except:
+        xianyu_js = execjs.compile(open(r'static/goofish_js_version_2.js', 'r', encoding='utf-8').read())
+else:
+    xianyu_js = None
+
+def require_xianyu_js():
+    if xianyu_js is None:
+        raise ModuleNotFoundError("PyExecJS is required for this JS-based helper. Install PyExecJS or use generate_mtop_sign for mtop search.")
+    return xianyu_js
 
 def trans_cookies(cookies_str):
     cookies = dict()
@@ -43,23 +55,28 @@ def get_session_cookies_str(session):
     return cookies_str[:-2]
 
 def generate_mid():
-    mid = xianyu_js.call('generate_mid')
+    mid = require_xianyu_js().call('generate_mid')
     return mid
 
 def generate_uuid():
-    uuid = xianyu_js.call('generate_uuid')
+    uuid = require_xianyu_js().call('generate_uuid')
     return uuid
 
 def generate_device_id(user_id):
-    device_id = xianyu_js.call('generate_device_id', user_id)
+    device_id = require_xianyu_js().call('generate_device_id', user_id)
     return device_id
 
 def generate_sign(t, token, data):
-    sign = xianyu_js.call('generate_sign', t, token, data)
+    sign = require_xianyu_js().call('generate_sign', t, token, data)
     return sign
 
+def generate_mtop_sign(t, token, app_key, data):
+    """Generate standard mtop H5 sign: md5(token&t&appKey&data)."""
+    plain = f"{token}&{t}&{app_key}&{data}"
+    return hashlib.md5(plain.encode("utf-8")).hexdigest()
+
 def decrypt(data):
-    res = xianyu_js.call('decrypt', data)
+    res = require_xianyu_js().call('decrypt', data)
     return res
 
 if __name__ == '__main__':

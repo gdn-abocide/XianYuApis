@@ -20,6 +20,7 @@ MANIFEST
 .cache
 *.log
 local_settings.py
+local_*.py
 db.sqlite3
 __pypackages__/
 .venv

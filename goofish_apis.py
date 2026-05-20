@@ -15,7 +15,7 @@ from urllib.parse import quote
 import requests
 
 from message.types import Price, DeliverySettings
-from utils.goofish_utils import generate_sign, trans_cookies, generate_device_id
+from utils.goofish_utils import generate_sign, generate_mtop_sign, trans_cookies, generate_device_id
 
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36')
@@ -529,7 +529,7 @@ class XianyuApis:
             "data": data_val
         }
         token = self.session.cookies.get('_m_h5_tk', '').split('_')[0]
-        params["sign"] = generate_sign(params["t"], token, data_val)
+        params["sign"] = generate_mtop_sign(params["t"], token, params["appKey"], data_val)
         response = self.session.post(self.search_url, headers=headers, params=params, data=data)
         return response.json()
 

@@ -2,3 +2,4 @@ requests
 urllib3<2
 loguru
 PyExecJS
+websockets

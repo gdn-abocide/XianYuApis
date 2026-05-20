@@ -10,7 +10,7 @@ if vendor_dir.exists():
     sys.path.append(str(vendor_dir))
 
 from goofish_apis import XianyuApis
-from utils.goofish_utils import generate_device_id, trans_cookies
+from utils.goofish_utils import trans_cookies
 
 
 COOKIE_STR = (
@@ -33,7 +33,7 @@ class XianyuSearchTester:
         self.cookies = trans_cookies(cookies_str)
         self.api = XianyuApis(
             self.cookies,
-            generate_device_id(self.cookies.get("unb", "")),
+            device_id="",
         )
 
     def search(self, keyword: str = "545", page_number: int = 1):
@@ -48,4 +48,4 @@ class XianyuSearchTester:
 if __name__ == "__main__":
     keyword = sys.argv[1] if len(sys.argv) > 1 else "iphone"
     page_number = int(sys.argv[2]) if len(sys.argv) > 2 else 1
-    XianyuSearchTester().print_search("iphone17 pro", page_number)
+    XianyuSearchTester().print_search(keyword, page_number)
